@@ -1,0 +1,31 @@
+﻿<!-- ChatWindow.xaml -->
+<Window x:Class="TelegramBotApp.ChatWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+         Height="450" Width="900">
+	<Grid>
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="200"/>
+			<ColumnDefinition Width="*"/>
+		</Grid.ColumnDefinitions>
+
+		<ListBox Name="ChatListBox" Grid.Column="0" SelectionChanged="OnChatSelectionChanged" Margin="0,48,0,0"/>
+		<Label Content="Чаты" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,10,0,0" FontFamily="Arial" FontWeight="Bold" FontSize="24"/>
+
+		<Grid Grid.Column="1">
+			<Grid.RowDefinitions>
+				<RowDefinition Height="*"/>
+				<RowDefinition Height="Auto"/>
+			</Grid.RowDefinitions>
+
+			<ListBox Name="MessagesListBox" Grid.Row="0"/>
+
+			<StackPanel Grid.Row="1" Orientation="Horizontal">
+				<TextBox Name="MessageTextBox" Grid.Column="2" Width="600"/>
+				<Button Content="-&gt;" Grid.Column="2" Click="OnSendMessageClick" VerticalAlignment="Bottom" Width="100" HorizontalAlignment="Right"/>
+			</StackPanel>
+		</Grid>
+
+		<ProgressBar Name="LoadingProgressBar" IsIndeterminate="True" Visibility="Collapsed" Grid.ColumnSpan="2" Height="20" VerticalAlignment="Bottom" Margin="0,0,0,10" HorizontalAlignment="Center"/>
+	</Grid>
+</Window>
