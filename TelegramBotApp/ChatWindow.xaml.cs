@@ -41,17 +41,25 @@ namespace TelegramBotApp
                 }
                 else
                 {
+                    string errorResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                     await Dispatcher.BeginInvoke(new Action(() =>
                     {
-                        MessageBox.Show("Ошибка при подключении к серверу. Попробуйте позже.");
+                        MessageBox.Show($"Ошибка при подключении к серверу. Ответ: {errorResponse}");
                     }));
                 }
+            }
+            catch (HttpRequestException httpEx)
+            {
+                await Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    MessageBox.Show($"Ошибка HTTP запроса: {httpEx.Message}\n{httpEx.StackTrace}");
+                }));
             }
             catch (Exception ex)
             {
                 await Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    MessageBox.Show($"Ошибка загрузки чатов: {ex.Message}");
+                    MessageBox.Show($"Ошибка загрузки чатов: {ex.Message}\n{ex.StackTrace}");
                 }));
             }
             finally
@@ -74,14 +82,24 @@ namespace TelegramBotApp
                         var message = update.GetProperty("message");
                         var chat = message.GetProperty("chat");
 
-                        int chatId = chat.GetProperty("id").GetInt32();
+                        // Попробуем безопасно извлечь ID чата и имя
+                        long chatId = 0;
+                        if (chat.TryGetProperty("id", out JsonElement chatIdElement) && chatIdElement.ValueKind == JsonValueKind.Number)
+                        {
+                            chatId = chatIdElement.GetInt64();
+                        }
+                        else
+                        {
+                            continue; // Пропустите сообщение, если ID чата отсутствует или не является числом
+                        }
+
                         string chatName = chat.GetProperty("first_name").GetString();
                         string messageText = message.GetProperty("text").GetString();
                         DateTime messageDate = DateTimeOffset.FromUnixTimeSeconds(message.GetProperty("date").GetInt64()).DateTime;
 
                         if (!_chats.Any(c => c.Id == chatId))
                         {
-                            _chats.Add(new Chat { Id = chatId, Name = chatName });
+                            _chats.Add(new Chat { Id = (int)chatId, Name = chatName });
                         }
 
                         _messages.Add(new Message
@@ -153,24 +171,31 @@ namespace TelegramBotApp
 
                 if (!response.IsSuccessStatusCode)
                 {
-                   await Dispatcher.BeginInvoke(new Action(() =>
+                    string errorResponse = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    await Dispatcher.BeginInvoke(new Action(() =>
                     {
-                        MessageBox.Show("Ошибка при отправке сообщения.");
+                        MessageBox.Show($"Ошибка при отправке сообщения. Ответ: {errorResponse}");
                     }));
                 }
+            }
+            catch (HttpRequestException httpEx)
+            {
+                await Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    MessageBox.Show($"Ошибка HTTP запроса при отправке сообщения: {httpEx.Message}\n{httpEx.StackTrace}");
+                }));
             }
             catch (Exception ex)
             {
                 await Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    MessageBox.Show($"Ошибка отправки сообщения: {ex.Message}");
+                    MessageBox.Show($"Ошибка отправки сообщения: {ex.Message}\n{ex.StackTrace}");
                 }));
             }
         }
     }
 
-
-public class Chat
+    public class Chat
     {
         public int Id { get; set; }
         public string Name { get; set; }
@@ -180,7 +205,7 @@ public class Chat
 
     public class Message
     {
-        public int ChatId { get; set; }
+        public long ChatId { get; set; }
         public string From { get; set; }
         public string Text { get; set; }
         public DateTime Date { get; set; }

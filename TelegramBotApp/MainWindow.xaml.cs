@@ -4,55 +4,95 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
+
 
 namespace TelegramBotApp
 {
     public partial class MainWindow : Window
     {
         private static readonly HttpClient httpClient = new HttpClient();
+        private const string StoredHashKeySettingName = "StoredHashKey";
 
-        public MainWindow() => InitializeComponent();
+        public MainWindow()
+        {
+            InitializeComponent();
+            LoadStoredHashKey();
+        }
+        
+        private void LoadStoredHashKey()
+        {
+            // Используем Dispatcher, чтобы убедиться, что выполнение идет на UI-потоке
+            Dispatcher.Invoke(() =>
+            {
+                string storedHashKey = Properties.Settings.Default.StoredHashKey.ToString();
+                if (!string.IsNullOrEmpty(storedHashKey))
+                {
+                    HashKeyComboBox.Items.Add(storedHashKey);
+                }
+            });
+        }
+
+        private void StoreHashKeyInMemory(string hashKey)
+        {
+            // Используем Dispatcher, чтобы убедиться, что выполнение идет на UI-потоке
+            Dispatcher.Invoke(() =>
+            {
+                if (RememberCheckBox.IsChecked == true)
+                {
+                    Properties.Settings.Default.StoredHashKey = hashKey;
+                }
+                else
+                {
+                    Properties.Settings.Default.StoredHashKey = string.Empty;
+                }
+                Properties.Settings.Default.Save(); // Сохраняем изменения в настройках
+            });
+        }
 
         private async void OnLoginButtonClick(object sender, RoutedEventArgs e)
         {
-            EnterButton.IsEnabled = false;
-            string hashKey = HashKeyTextBox.Text;
-            
+            Dispatcher.Invoke(() => EnterButton.IsEnabled = false);
+            string hashKey = HashKeyComboBox.Text;
 
             if (string.IsNullOrWhiteSpace(hashKey))
             {
                 MessageBox.Show("Хэш-ключ не должен быть пустым.");
-                EnterButton.IsEnabled = true;
+                Dispatcher.Invoke(() => EnterButton.IsEnabled = true);
                 return;
             }
 
-            LoadingProgressBar.Visibility = Visibility.Visible;
+            Dispatcher.Invoke(() => LoadingProgressBar.Visibility = Visibility.Visible);
 
-            bool isValidKey = false;
             try
             {
-                isValidKey = await IsValidHashKeyAsync(hashKey);
+                bool isValidKey = await IsValidHashKeyAsync(hashKey);
+
+                if (isValidKey)
+                {
+                    StoreHashKeyInMemory(hashKey);
+                    await Task.Delay(500);
+                    Dispatcher.Invoke(() =>
+                    {
+                        ChatWindow chatWindow = new ChatWindow(hashKey);
+                        chatWindow.Show();
+                        this.Close();
+                    });
+                }
+                else
+                {
+                    MessageBox.Show("Пожалуйста, введите корректный ХЭШ-ключ.");
+                    Dispatcher.Invoke(() => EnterButton.IsEnabled = true);
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка при проверке ключа: {ex.Message}");
-                EnterButton.IsEnabled = true;
+                MessageBox.Show($"Ошибка при входе: {ex.Message}");
+                Dispatcher.Invoke(() => EnterButton.IsEnabled = true);
             }
             finally
             {
-                LoadingProgressBar.Visibility = Visibility.Collapsed;
-            }
-
-            if (isValidKey)
-            {
-                ChatWindow chatWindow = new ChatWindow(hashKey);
-                chatWindow.Show();
-                this.Close();
-            }
-            else
-            {
-                MessageBox.Show("Пожалуйста, введите корректный ХЭШ-ключ.");
-                EnterButton.IsEnabled = true;
+                Dispatcher.Invoke(() => LoadingProgressBar.Visibility = Visibility.Collapsed);
             }
         }
 
@@ -80,24 +120,22 @@ namespace TelegramBotApp
             }
             catch (HttpRequestException ex)
             {
-                // Сетевые ошибки, такие как неправильный URL или нет подключения
-                MessageBox.Show($"Ошибка сети: {ex.Message}");
-                EnterButton.IsEnabled = true;
+                Dispatcher.Invoke(() => MessageBox.Show($"Ошибка сети: {ex.Message}"));
                 return false;
             }
             catch (JsonException ex)
             {
-                // Ошибка при разборе JSON-ответа
-                MessageBox.Show($"Ошибка данных: {ex.Message}");
-                EnterButton.IsEnabled = true;
+                Dispatcher.Invoke(() => MessageBox.Show($"Ошибка данных: {ex.Message}"));
                 return false;
             }
             catch (Exception ex)
             {
-                // Все другие ошибки
-                MessageBox.Show($"Неизвестная ошибка: {ex.Message}");
-                EnterButton.IsEnabled = true;
+                Dispatcher.Invoke(() => MessageBox.Show($"Неизвестная ошибка: {ex.Message}"));
                 return false;
+            }
+            finally
+            {
+                Dispatcher.Invoke(() => EnterButton.IsEnabled = true);
             }
         }
     }
