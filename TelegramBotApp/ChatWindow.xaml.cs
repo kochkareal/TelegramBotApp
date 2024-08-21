@@ -74,44 +74,57 @@ namespace TelegramBotApp
             {
                 JsonElement root = jsonDoc.RootElement;
 
-                if (root.GetProperty("ok").GetBoolean())
+                if (root.TryGetProperty("ok", out JsonElement okElement) && okElement.GetBoolean())
                 {
-                    var updates = root.GetProperty("result").EnumerateArray();
-                    foreach (var update in updates)
+                    if (root.TryGetProperty("result", out JsonElement resultElement) && resultElement.ValueKind == JsonValueKind.Array)
                     {
-                        var message = update.GetProperty("message");
-                        var chat = message.GetProperty("chat");
-
-                        // Попробуем безопасно извлечь ID чата и имя
-                        long chatId = 0;
-                        if (chat.TryGetProperty("id", out JsonElement chatIdElement) && chatIdElement.ValueKind == JsonValueKind.Number)
+                        foreach (var update in resultElement.EnumerateArray())
                         {
-                            chatId = chatIdElement.GetInt64();
+                            if (update.TryGetProperty("message", out JsonElement messageElement))
+                            {
+                                if (messageElement.TryGetProperty("chat", out JsonElement chatElement))
+                                {
+                                    long chatId = 0;
+                                    if (chatElement.TryGetProperty("id", out JsonElement chatIdElement) && chatIdElement.ValueKind == JsonValueKind.Number)
+                                    {
+                                        chatId = chatIdElement.GetInt64();
+                                    }
+                                    else
+                                    {
+                                        continue; // Пропустите сообщение, если ID чата отсутствует или не является числом
+                                    }
+
+                                    string chatName = chatElement.TryGetProperty("first_name", out JsonElement nameElement) ? nameElement.GetString() : "Unknown";
+                                    string messageText = messageElement.TryGetProperty("text", out JsonElement textElement) ? textElement.GetString() : string.Empty;
+                                    DateTime messageDate = messageElement.TryGetProperty("date", out JsonElement dateElement)
+                                        ? DateTimeOffset.FromUnixTimeSeconds(dateElement.GetInt64()).DateTime
+                                        : DateTime.MinValue;
+
+                                    if (!_chats.Any(c => c.Id == chatId))
+                                    {
+                                        _chats.Add(new Chat { Id = (int)chatId, Name = chatName });
+                                    }
+
+                                    _messages.Add(new Message
+                                    {
+                                        ChatId = chatId,
+                                        From = messageElement.TryGetProperty("from", out JsonElement fromElement) ? fromElement.GetProperty("first_name").GetString() : "Unknown",
+                                        Text = messageText,
+                                        Date = messageDate
+                                    });
+                                }
+                            }
                         }
-                        else
-                        {
-                            continue; // Пропустите сообщение, если ID чата отсутствует или не является числом
-                        }
 
-                        string chatName = chat.GetProperty("first_name").GetString();
-                        string messageText = message.GetProperty("text").GetString();
-                        DateTime messageDate = DateTimeOffset.FromUnixTimeSeconds(message.GetProperty("date").GetInt64()).DateTime;
-
-                        if (!_chats.Any(c => c.Id == chatId))
-                        {
-                            _chats.Add(new Chat { Id = (int)chatId, Name = chatName });
-                        }
-
-                        _messages.Add(new Message
-                        {
-                            ChatId = chatId,
-                            From = message.GetProperty("from").GetProperty("first_name").GetString(),
-                            Text = messageText,
-                            Date = messageDate
-                        });
+                        Dispatcher.BeginInvoke(new Action(UpdateUI));
                     }
-
-                    Dispatcher.BeginInvoke(new Action(UpdateUI));
+                    else
+                    {
+                        Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            MessageBox.Show("Ошибка: 'result' отсутствует или не является массивом.");
+                        }));
+                    }
                 }
                 else
                 {
@@ -122,6 +135,7 @@ namespace TelegramBotApp
                 }
             }
         }
+
 
         private void UpdateUI()
         {
