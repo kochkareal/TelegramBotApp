@@ -2,141 +2,151 @@
 using System;
 using System.Net.Http;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Threading;
-
 
 namespace TelegramBotApp
 {
     public partial class MainWindow : Window
     {
         private static readonly HttpClient httpClient = new HttpClient();
-        private const string StoredHashKeySettingName = "StoredHashKey";
+        private readonly CancellationTokenSource _cts = new CancellationTokenSource();
 
         public MainWindow()
         {
             InitializeComponent();
-            LoadStoredHashKey();
-        }
-        
-        private void LoadStoredHashKey()
-        {
-            // Используем Dispatcher, чтобы убедиться, что выполнение идет на UI-потоке
-            Dispatcher.Invoke(() =>
-            {
-                string storedHashKey = Properties.Settings.Default.StoredHashKey.ToString();
-                if (!string.IsNullOrEmpty(storedHashKey))
-                {
-                    HashKeyComboBox.Items.Add(storedHashKey);
-                }
-            });
+            InitializeUI();
         }
 
-        private void StoreHashKeyInMemory(string hashKey)
+        private async void InitializeUI()
         {
-            // Используем Dispatcher, чтобы убедиться, что выполнение идет на UI-потоке
-            Dispatcher.Invoke(() =>
+            string storedHashKey = await LoadStoredHashKeyAsync();
+            if (!string.IsNullOrEmpty(storedHashKey))
             {
-                if (RememberCheckBox.IsChecked == true)
-                {
-                    Properties.Settings.Default.StoredHashKey = hashKey;
-                }
-                else
-                {
-                    Properties.Settings.Default.StoredHashKey = string.Empty;
-                }
-                Properties.Settings.Default.Save(); // Сохраняем изменения в настройках
-            });
+                HashKeyComboBox.Items.Add(storedHashKey);
+            }
+        }
+
+        private Task<string> LoadStoredHashKeyAsync()
+        {
+            return Task.FromResult(Properties.Settings.Default.StoredHashKey);
+        }
+
+        private void StoreHashKey(string hashKey)
+        {
+
+            if (RememberCheckBox.IsChecked == true)Properties.Settings.Default.StoredHashKey = hashKey;
+
+            Properties.Settings.Default.Save();
         }
 
         private async void OnLoginButtonClick(object sender, RoutedEventArgs e)
         {
-            Dispatcher.Invoke(() => EnterButton.IsEnabled = false);
+            SetLoadingState(true);
+
             string hashKey = HashKeyComboBox.Text;
 
-            if (string.IsNullOrWhiteSpace(hashKey))
+            if (!IsHashKeyValid(hashKey))
             {
-                MessageBox.Show("Хэш-ключ не должен быть пустым.");
-                Dispatcher.Invoke(() => EnterButton.IsEnabled = true);
+                ShowError("Хэш-ключ не должен быть пустым.");
+                SetLoadingState(false);
                 return;
             }
 
-            Dispatcher.Invoke(() => LoadingProgressBar.Visibility = Visibility.Visible);
-
             try
             {
-                bool isValidKey = await IsValidHashKeyAsync(hashKey);
-
-                if (isValidKey)
+                bool isValid = await IsValidHashKeyAsync(hashKey, _cts.Token);
+                if (isValid)
                 {
-                    StoreHashKeyInMemory(hashKey);
-                    await Task.Delay(500);
-                    Dispatcher.Invoke(() =>
-                    {
-                        ChatWindow chatWindow = new ChatWindow(hashKey);
-                        chatWindow.Show();
-                        this.Close();
-                    });
+                    StoreHashKey(hashKey);
+                    OpenChatWindow(hashKey);
                 }
                 else
                 {
-                    MessageBox.Show("Пожалуйста, введите корректный ХЭШ-ключ.");
-                    Dispatcher.Invoke(() => EnterButton.IsEnabled = true);
+                    ShowError("Пожалуйста, введите корректный ХЭШ-ключ.");
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                ShowError("Операция была отменена.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка при входе: {ex.Message}");
-                Dispatcher.Invoke(() => EnterButton.IsEnabled = true);
+                ShowError($"Ошибка при входе: {ex.Message}");
             }
             finally
             {
-                Dispatcher.Invoke(() => LoadingProgressBar.Visibility = Visibility.Collapsed);
+                SetLoadingState(false);
             }
         }
 
-        private async Task<bool> IsValidHashKeyAsync(string hashKey)
+
+        private async Task<bool> IsValidHashKeyAsync(string hashKey, CancellationToken cancellationToken)
         {
+            string url = $"https://api.telegram.org/bot{hashKey}/getUpdates";
             try
             {
-                string url = $"https://api.telegram.org/bot{hashKey}/getUpdates";
-                HttpResponseMessage response = await httpClient.GetAsync(url).ConfigureAwait(false);
+                HttpResponseMessage response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
+                response.EnsureSuccessStatusCode();
 
-                if (response.IsSuccessStatusCode)
+                string responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                using (JsonDocument jsonDoc = JsonDocument.Parse(responseBody))
                 {
-                    string responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-
-                    using (JsonDocument jsonDoc = JsonDocument.Parse(responseBody))
+                    // Проверяем наличие свойства "ok" перед попыткой получить его значение
+                    if (jsonDoc.RootElement.TryGetProperty("ok", out JsonElement okProperty))
                     {
-                        JsonElement root = jsonDoc.RootElement;
-                        return root.GetProperty("ok").GetBoolean();
+                        return okProperty.GetBoolean();
                     }
-                }
-                else
-                {
-                    return false;
+                    else
+                    {
+                        ShowError("Ошибка в ответе сервера: отсутствует свойство 'ok'.");
+                        return false;
+                    }
                 }
             }
             catch (HttpRequestException ex)
             {
-                Dispatcher.Invoke(() => MessageBox.Show($"Ошибка сети: {ex.Message}"));
+                ShowError($"Ошибка сети: {ex.Message}. Проверьте ваше интернет-соединение.");
                 return false;
             }
             catch (JsonException ex)
             {
-                Dispatcher.Invoke(() => MessageBox.Show($"Ошибка данных: {ex.Message}"));
+                ShowError($"Ошибка при обработке данных: {ex.Message}. Убедитесь, что ответ сервера в правильном формате.");
                 return false;
-            }
-            catch (Exception ex)
-            {
-                Dispatcher.Invoke(() => MessageBox.Show($"Неизвестная ошибка: {ex.Message}"));
-                return false;
-            }
-            finally
-            {
-                Dispatcher.Invoke(() => EnterButton.IsEnabled = true);
             }
         }
+
+        private bool IsHashKeyValid(string hashKey)
+        {
+            return !string.IsNullOrWhiteSpace(hashKey);
+        }
+
+        private void OpenChatWindow(string hashKey)
+        {
+            var chatWindow = new ChatWindow(hashKey);
+            chatWindow.Show();
+            Close();
+        }
+
+        private void ShowError(string message)
+        {
+            MessageBox.Show(message, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+
+        private void SetLoadingState(bool isLoading)
+        {
+            EnterButton.IsEnabled = !isLoading;
+            LoadingProgressBar.Visibility = isLoading ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            _cts.Cancel();
+            _cts.Dispose();
+            base.OnClosed(e);
+        }
     }
+
 }
