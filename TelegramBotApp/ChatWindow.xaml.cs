@@ -13,15 +13,33 @@ namespace TelegramBotApp
     public partial class ChatWindow : Window
     {
         private readonly string _hashKey;
+        private readonly string _BotId;
+        private readonly string _BotName;
+        private readonly string _BotUsername;
+        private readonly bool   IsCanJoinGroups;
+        private readonly bool   IsCanReadAllGroupMessages;
+        private readonly bool   IsSupportsInlineQueries;
+        private readonly bool   IsCanConnectToBusiness;
+        private readonly bool   IsMainWebApp;
         private static readonly HttpClient httpClient = new HttpClient();
         private readonly List<Chat> _chats = new List<Chat>();
         private readonly List<Message> _messages = new List<Message>();
 
-        public ChatWindow(string hashKey)
+        public ChatWindow(string hashKey, string BotId, string BotName, string BotUsername,
+           bool CanJoinGroups, bool CanReadAllGroupMessages, bool SupportsInlineQueries, bool CanConnectToBusiness, bool MainWebApp)
         {
             InitializeComponent();
             _hashKey = hashKey;
+            _BotId = BotId;
+            _BotName = BotName;
+            _BotUsername = "@" + BotUsername;
+            IsCanJoinGroups = CanJoinGroups;
+            IsCanReadAllGroupMessages = CanReadAllGroupMessages;
+            IsSupportsInlineQueries = SupportsInlineQueries;
+            IsCanConnectToBusiness = CanConnectToBusiness;
+            IsMainWebApp = MainWebApp;
 
+            TitleLable.Content = "Чаты " + _BotUsername;
             LoadChatsAsync();
         }
 
@@ -91,7 +109,7 @@ namespace TelegramBotApp
                                     }
                                     else
                                     {
-                                        continue; // Пропустите сообщение, если ID чата отсутствует или не является числом
+                                        continue; 
                                     }
 
                                     string chatName = chatElement.TryGetProperty("first_name", out JsonElement nameElement) ? nameElement.GetString() : "Unknown";
@@ -141,6 +159,11 @@ namespace TelegramBotApp
         {
             ChatListBox.ItemsSource = null;
             ChatListBox.ItemsSource = _chats;
+            if (_messages.Count == 0) {
+                ChatListBox.Visibility = Visibility.Collapsed;
+                NoMessagesTextBlock.Visibility = Visibility.Visible;
+            }
+            else NoMessagesTextBlock.Visibility = Visibility.Collapsed;
         }
 
         private void OnChatSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -150,7 +173,9 @@ namespace TelegramBotApp
                 var messages = _messages.Where(m => m.ChatId == selectedChat.Id).ToList();
                 MessagesListBox.ItemsSource = null;
                 MessagesListBox.ItemsSource = messages;
+                NoMessagesTextBlock.Visibility = messages.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
             }
+
         }
 
         private async void OnSendMessageClick(object sender, RoutedEventArgs e)
@@ -166,7 +191,7 @@ namespace TelegramBotApp
                     _messages.Add(new Message
                     {
                         ChatId = selectedChat.Id,
-                        From = "Вы",
+                        From = _BotUsername,
                         Text = messageText,
                         Date = DateTime.Now
                     });
@@ -226,4 +251,5 @@ namespace TelegramBotApp
 
         public override string ToString() => $"{Date}: {From}: {Text}";
     }
+
 }

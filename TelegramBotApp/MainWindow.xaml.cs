@@ -10,6 +10,15 @@ namespace TelegramBotApp
 {
     public partial class MainWindow : Window
     {
+        private string BotId;
+        private string BotName;
+        private string BotUsername;
+        private bool IsCanJoinGroups;
+        private bool IsCanReadAllGroupMessages;
+        private bool IsSupportsInlineQueries;
+        private bool IsCanConnectToBusiness;
+        private bool IsMainWebApp;
+
         private static readonly HttpClient httpClient = new HttpClient();
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
 
@@ -84,7 +93,7 @@ namespace TelegramBotApp
 
         private async Task<bool> IsValidHashKeyAsync(string hashKey, CancellationToken cancellationToken)
         {
-            string url = $"https://api.telegram.org/bot{hashKey}/getUpdates";
+            string url = $"https://api.telegram.org/bot{hashKey}/getMe";
             try
             {
                 HttpResponseMessage response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
@@ -97,7 +106,19 @@ namespace TelegramBotApp
                     // Проверяем наличие свойства "ok" перед попыткой получить его значение
                     if (jsonDoc.RootElement.TryGetProperty("ok", out JsonElement okProperty))
                     {
-                        return okProperty.GetBoolean();
+                        if (jsonDoc.RootElement.TryGetProperty("result", out JsonElement resultProperty))
+                        {
+                            // Извлекаем значения из result и записываем их в переменные
+                            BotId = resultProperty.GetProperty("id").GetInt64().ToString();
+                            BotName = resultProperty.GetProperty("first_name").GetString();
+                            BotUsername = resultProperty.GetProperty("username").GetString();
+                            IsCanJoinGroups = resultProperty.GetProperty("can_join_groups").GetBoolean();
+                            IsCanReadAllGroupMessages= resultProperty.GetProperty("can_read_all_group_messages").GetBoolean();
+                            IsSupportsInlineQueries = resultProperty.GetProperty("supports_inline_queries").GetBoolean();
+                            IsCanConnectToBusiness = resultProperty.GetProperty("can_connect_to_business").GetBoolean();
+                            IsMainWebApp = resultProperty.GetProperty("has_main_web_app").GetBoolean();
+                        }
+                            return okProperty.GetBoolean();
                     }
                     else
                     {
@@ -125,7 +146,8 @@ namespace TelegramBotApp
 
         private void OpenChatWindow(string hashKey)
         {
-            var chatWindow = new ChatWindow(hashKey);
+            var chatWindow = new ChatWindow(hashKey,BotId, BotName, BotUsername,
+            IsCanJoinGroups, IsCanReadAllGroupMessages,  IsSupportsInlineQueries, IsCanConnectToBusiness,  IsMainWebApp);
             chatWindow.Show();
             Close();
         }

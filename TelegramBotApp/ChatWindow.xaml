@@ -22,7 +22,7 @@
 
         <!-- Список чатов -->
         <StackPanel Grid.Column="0" Background="#EDEDED">
-            <Label Content="Чаты"
+            <Label x:Name="TitleLable" Content="Чаты"
                    FontSize="24"
                    FontWeight="Bold"
                    Foreground="#0088CC"
@@ -35,6 +35,14 @@
                      FontSize="16"
                      Padding="10"
                      SelectionChanged="OnChatSelectionChanged"/>
+
+            <TextBlock Name="NoMessagesTextBlock"
+                   Text="Сообщения отсутствуют"
+                   Foreground="#0088CC"
+                   FontSize="20"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   Visibility="Collapsed"/>
         </StackPanel>
 
         <!-- Основная область сообщений -->
