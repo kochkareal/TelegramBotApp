@@ -102,7 +102,13 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Converters\BooleanToVisibilityConverter.cs" />
+    <Compile Include="Models\BotInfo.cs" />
+    <Compile Include="Models\Chat.cs" />
+    <Compile Include="Models\Message.cs" />
     <Compile Include="Settings.cs" />
+    <Compile Include="ViewModels\BaseViewModel.cs" />
+    <Compile Include="ViewModels\MainWindowViewModel.cs" />
     <Page Include="ChatWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <CustomToolNamespace>UTF-8</CustomToolNamespace>
