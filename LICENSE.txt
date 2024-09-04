@@ -1,0 +1,127 @@
+GNU GENERAL PUBLIC LICENSE
+Version 3, 29 June 2007
+
+Copyright (C) 2024  TelegramBotApp
+Copyright (C) 2024  Free Software Foundation, Inc.
+
+Everyone is permitted to copy and distribute verbatim copies
+of this license document, but changing it is not allowed.
+
+*Preamble*
+
+The GNU General Public License is a free, copyleft license for software
+and other kinds of works. The licenses for most software and other
+practical works are designed to take away your freedom to share and
+change the works. By contrast, the GNU General Public License is
+intended to guarantee your freedom to share and change all versions of
+a program--to make sure it remains free software for all its users.
+
+When we speak of free software, we are referring to freedom, not price.
+Our General Public Licenses are designed to make sure that you have the
+freedom to distribute copies of free software (and charge for this
+service if you wish), that you receive source code or can get it if you
+want it, that you can change the software or use pieces of it in new
+free programs, and that you know you can do these things.
+
+To protect your rights, we need to make restrictions that forbid anyone
+to deny you these rights or to ask you to surrender the rights. These
+restrictions translate to certain responsibilities for you if you
+distribute copies of the software, or if you modify it.
+
+For example, if you distribute copies of such a program, whether
+gratis or for a fee, you must pass on to the recipients the same
+freedoms that you received. You must make sure that they, too, receive
+or can get the source code. And you must show them these terms so they
+know their rights.
+
+We protect your rights with two steps:
+(1) copyright the software, and
+(2) offer you this license which gives you legal permission to copy,
+distribute and/or modify the software.
+
+Also, for each author's protection and ours, we want to make certain
+that everyone understands that there is no warranty for this free
+software. If the software is modified by someone else and passed on, we
+want its recipients to know that what they have is not the original,
+so that any problems introduced by others will not reflect on the
+original authors' reputations.
+
+Finally, any free program is threatened constantly by software patents.
+We wish to avoid the danger that redistributors of a free program will
+individually obtain patent licenses, in effect making the program
+nonfree. To prevent this, we have made it clear that any patent must be
+licensed for everyone's free use or not licensed at all.
+
+The precise terms and conditions for copying, distribution and
+modification follow.
+
+*Terms and Conditions*
+
+0. Definitions.
+
+    "This License" refers to version 3 of the GNU General Public License.
+
+    "Copyright holder" is the individual, individuals, entity or entities
+    named in the copyright notice for the Program.
+
+    "You" means the licensee of the Program.
+
+    "The Program" means any copyrightable work licensed under this
+    License.
+
+    "Modified Version" means a work based on the Program or on another
+    work submitted to the Program by the copyright holder under the
+    terms of this License, with changes made by the licensee.
+
+    "Source Code" means the preferred form of the Program for making
+    modifications to it. "Object Code" means any non-source form of a
+    work.
+
+    "Work based on the Program" means either the Program or a work
+    based on the Program.
+
+    "Installation Information" means any instructions required to
+    install and run the Program or a Modified Version on a computer.
+
+1. Source Code.
+
+    The source code for a work means the preferred form of the work for
+    making modifications to it.
+
+2. Basic Permissions.
+
+    You may copy and distribute verbatim copies of the Program's source
+    code as you receive it, in any medium, provided that you conspicuously
+    and appropriately publish on each copy an appropriate copyright notice;
+    keep intact all the notices that refer to this License and to the absence
+    of any warranty; and give any other recipients of the Program a copy of
+    this License along with the Program.
+
+3. Copyleft.
+
+    You may distribute copies of the Program or Modified Versions under the
+    terms of this License, provided that you keep intact all copyright notices
+    for the Program, and you include the text of this License and the source
+    code in your distribution.
+
+4. Additional Permissions.
+
+    If you wish to add additional permissions, you may do so by making your
+    own license which grants additional permissions to use the Program.
+
+5. Disclaimer of Warranty.
+
+    THE PROGRAM IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+    THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    THE SOFTWARE.
+
+6. Limitation of Liability.
+
+    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+    DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+    USE OR OTHER DEALINGS IN THE SOFTWARE.
