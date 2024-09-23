@@ -1,7 +1,6 @@
 ﻿// ViewModels/MainWindowViewModel.cs
 
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -12,21 +11,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using TelegramBotApp.Models;
 
 namespace TelegramBotApp.ViewModels
 {
     public class MainWindowViewModel : INotifyPropertyChanged
     {
-        private string _selectedHashKey;
+        private BotInfo Bot = new BotInfo();
         private bool _isLoading;
-        private string _botId;
-        private string _botName;
-        private string _botUsername;
-        private bool _isCanJoinGroups;
-        private bool _isCanReadAllGroupMessages;
-        private bool _isSupportsInlineQueries;
-        private bool _isCanConnectToBusiness;
-        private bool _isMainWebApp;
+
 
         private static readonly HttpClient HttpClient = new HttpClient();
         private readonly CancellationTokenSource _cts = new CancellationTokenSource();
@@ -36,8 +29,8 @@ namespace TelegramBotApp.ViewModels
 
         public string SelectedHashKey
         {
-            get => _selectedHashKey;
-            set => SetProperty(ref _selectedHashKey, value);
+            get => Bot.Token;
+            set => Bot.Token = value;
         }
 
         public bool IsLoading
@@ -97,10 +90,10 @@ namespace TelegramBotApp.ViewModels
 
             try
             {
-                if (await IsValidHashKeyAsync(SelectedHashKey, _cts.Token))
+                if (await IsValidHashKeyAsync(Bot.Token, _cts.Token))
                 {
                     StoreHashKey(SelectedHashKey);
-                    OpenChatWindow(SelectedHashKey);
+                    OpenChatWindow(Bot);
                 }
                 else
                 {
@@ -135,14 +128,14 @@ namespace TelegramBotApp.ViewModels
                     if (jsonDoc.RootElement.TryGetProperty("ok", out var okProperty) && okProperty.GetBoolean())
                     {
                         var resultProperty = jsonDoc.RootElement.GetProperty("result");
-                        _botId = resultProperty.GetProperty("id").GetInt64().ToString();
-                        _botName = resultProperty.GetProperty("first_name").GetString();
-                        _botUsername = resultProperty.GetProperty("username").GetString();
-                        _isCanJoinGroups = resultProperty.GetProperty("can_join_groups").GetBoolean();
-                        _isCanReadAllGroupMessages = resultProperty.GetProperty("can_read_all_group_messages").GetBoolean();
-                        _isSupportsInlineQueries = resultProperty.GetProperty("supports_inline_queries").GetBoolean();
-                        _isCanConnectToBusiness = resultProperty.GetProperty("can_connect_to_business").GetBoolean();
-                        _isMainWebApp = resultProperty.GetProperty("has_main_web_app").GetBoolean();
+                        Bot.Id = resultProperty.GetProperty("id").GetInt64().ToString();
+                        Bot.Name = resultProperty.GetProperty("first_name").GetString();
+                        Bot.Username = resultProperty.GetProperty("username").GetString();
+                        Bot.CanJoinGroups = resultProperty.GetProperty("can_join_groups").GetBoolean();
+                        Bot.CanReadAllGroupMessages = resultProperty.GetProperty("can_read_all_group_messages").GetBoolean();
+                        Bot.SupportsInlineQueries = resultProperty.GetProperty("supports_inline_queries").GetBoolean();
+                        Bot.CanConnectToBusiness = resultProperty.GetProperty("can_connect_to_business").GetBoolean();
+                        Bot.MainWebApp = resultProperty.GetProperty("has_main_web_app").GetBoolean();
 
                         return true;
                     }
@@ -162,9 +155,9 @@ namespace TelegramBotApp.ViewModels
 
         private bool IsHashKeyValid(string hashKey) => !string.IsNullOrWhiteSpace(hashKey);
 
-        private void OpenChatWindow(string hashKey)
+        private void OpenChatWindow(BotInfo Bot)
         {
-            var chatWindow = new ChatWindow(hashKey, _botId, _botName, _botUsername, _isCanJoinGroups, _isCanReadAllGroupMessages, _isSupportsInlineQueries, _isCanConnectToBusiness, _isMainWebApp);
+            var chatWindow = new ChatWindow(Bot);
             chatWindow.Show();
             Application.Current.MainWindow.Close();
         }

@@ -7,39 +7,22 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using TelegramBotApp.Models;
 
 namespace TelegramBotApp
 {
     public partial class ChatWindow : Window
     {
-        private readonly string _hashKey;
-        private readonly string _BotId;
-        private readonly string _BotName;
-        private readonly string _BotUsername;
-        private readonly bool   IsCanJoinGroups;
-        private readonly bool   IsCanReadAllGroupMessages;
-        private readonly bool   IsSupportsInlineQueries;
-        private readonly bool   IsCanConnectToBusiness;
-        private readonly bool   IsMainWebApp;
+        BotInfo Bot = new BotInfo();
         private static readonly HttpClient httpClient = new HttpClient();
         private readonly List<Chat> _chats = new List<Chat>();
         private readonly List<Message> _messages = new List<Message>();
 
-        public ChatWindow(string hashKey, string BotId, string BotName, string BotUsername,
-           bool CanJoinGroups, bool CanReadAllGroupMessages, bool SupportsInlineQueries, bool CanConnectToBusiness, bool MainWebApp)
+        public ChatWindow(BotInfo info)
         {
             InitializeComponent();
-            _hashKey = hashKey;
-            _BotId = BotId;
-            _BotName = BotName;
-            _BotUsername = "@" + BotUsername;
-            IsCanJoinGroups = CanJoinGroups;
-            IsCanReadAllGroupMessages = CanReadAllGroupMessages;
-            IsSupportsInlineQueries = SupportsInlineQueries;
-            IsCanConnectToBusiness = CanConnectToBusiness;
-            IsMainWebApp = MainWebApp;
-
-            TitleLable.Content = "Чаты " + _BotUsername;
+            Bot = info;
+            TitleLable.Content = "Чаты " + Bot.Username;
             LoadChatsAsync();
         }
 
@@ -49,7 +32,7 @@ namespace TelegramBotApp
             {
                 await Dispatcher.BeginInvoke(new Action(() => LoadingProgressBar.Visibility = Visibility.Visible));
 
-                string url = $"https://api.telegram.org/bot{_hashKey}/getUpdates";
+                string url = $"https://api.telegram.org/bot{Bot.Token}/getUpdates";
                 HttpResponseMessage response = await httpClient.GetAsync(url).ConfigureAwait(false);
 
                 if (response.IsSuccessStatusCode)
@@ -191,7 +174,7 @@ namespace TelegramBotApp
                     _messages.Add(new Message
                     {
                         ChatId = selectedChat.Id,
-                        From = _BotUsername,
+                        From = Bot.Username,
                         Text = messageText,
                         Date = DateTime.Now
                     });
@@ -205,7 +188,7 @@ namespace TelegramBotApp
         {
             try
             {
-                string url = $"https://api.telegram.org/bot{_hashKey}/sendMessage?chat_id={chatId}&text={messageText}";
+                string url = $"https://api.telegram.org/bot{Bot.Token}/sendMessage?chat_id={chatId}&text={messageText}";
                 HttpResponseMessage response = await httpClient.GetAsync(url).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
@@ -233,23 +216,4 @@ namespace TelegramBotApp
             }
         }
     }
-
-    public class Chat
-    {
-        public int Id { get; set; }
-        public string Name { get; set; }
-
-        public override string ToString() => Name;
-    }
-
-    public class Message
-    {
-        public long ChatId { get; set; }
-        public string From { get; set; }
-        public string Text { get; set; }
-        public DateTime Date { get; set; }
-
-        public override string ToString() => $"{Date}: {From}: {Text}";
-    }
-
 }
